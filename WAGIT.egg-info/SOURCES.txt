@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+WAGIT.egg-info/PKG-INFO
+WAGIT.egg-info/SOURCES.txt
+WAGIT.egg-info/dependency_links.txt
+WAGIT.egg-info/entry_points.txt
+WAGIT.egg-info/requires.txt
+WAGIT.egg-info/top_level.txt
+wagit/__init__.py
+wagit/cli.py

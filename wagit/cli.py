@@ -161,7 +161,7 @@ def startup_animation():
             time.sleep(0.02)
             
     panel = Panel.fit(
-        "[bold cyan]W G I T[/bold cyan]\n[italic green]Automatic Git Push CLI[/italic green]",
+        "[bold cyan]W A G I T[/bold cyan]\n[italic green]Automatic Git Push CLI[/italic green]",
         border_style="bold magenta",
         padding=(1, 5)
     )
@@ -169,7 +169,23 @@ def startup_animation():
     console.print()
 
 def main():
-    parser = argparse.ArgumentParser(description="WGIT - Automatic Git Push CLI")
+    parser = argparse.ArgumentParser(
+        description="WAGIT - Automatic Git Push CLI",
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="""
+Guides & Usage:
+---------------
+1. Run `WAGIT` in any directory to automatically:
+   - Initialize a git repository (if none exists)
+   - Add a remote origin (if none exists)
+   - Generate a .gitignore file (if none exists)
+   - Select files to stage
+   - Write a smart commit message using AI (Groq) or manually
+   - Push to GitHub
+
+2. Run `WAGIT --undo` to safely undo your last local commit while keeping your file changes.
+"""
+    )
     parser.add_argument("--undo", action="store_true", help="Undo the last local commit")
     args = parser.parse_args()
 
