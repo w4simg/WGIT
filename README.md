@@ -29,3 +29,8 @@ WAGIT
 ```bash
 WAGIT --undo
 ```
+
+**To get help:**
+```bash
+WAGIT --help
+```
