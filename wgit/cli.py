@@ -9,6 +9,9 @@ import questionary
 from rich.console import Console
 from rich.prompt import Prompt, Confirm
 from rich.table import Table
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+from rich.panel import Panel
+from rich.align import Align
 
 console = Console()
 
@@ -85,6 +88,86 @@ def show_git_status():
     console.print(table)
     return files
 
+def get_groq_api_key():
+    config_file = os.path.expanduser("~/.wgit_config")
+    if os.path.exists(config_file):
+        with open(config_file, "r") as f:
+            for line in f:
+                if line.startswith("GROQ_API_KEY="):
+                    return line.strip().split("=")[1]
+    
+    console.print("[bold yellow]Groq API Key not found.[/bold yellow]")
+    api_key = Prompt.ask("[bold magenta]Enter your Groq API Key (it will be saved securely)[/bold magenta]").strip()
+    if api_key:
+        with open(config_file, "a") as f:
+            f.write(f"GROQ_API_KEY={api_key}\n")
+        return api_key
+    return None
+
+def generate_ai_commit():
+    api_key = get_groq_api_key()
+    if not api_key:
+        console.print("[bold red]API Key is required for AI commits.[/bold red]")
+        return None
+        
+    try:
+        diff_result = subprocess.run(["git", "diff", "--staged"], stdout=subprocess.PIPE, text=True, check=True)
+        diff = diff_result.stdout.strip()
+        if not diff:
+            console.print("[bold red]No staged changes found to generate a commit message.[/bold red]")
+            return None
+            
+        if len(diff) > 15000:
+            diff = diff[:15000] + "\n... (diff truncated)"
+            
+        with console.status("[bold yellow]Generating smart commit message with Groq AI...[/bold yellow]", spinner="dots"):
+            from groq import Groq
+            client = Groq(api_key=api_key)
+            
+            prompt = (
+                "You are an expert developer. Generate a concise, professional git commit message based on the following git diff. "
+                "Only output the commit message itself, nothing else. Do not wrap in quotes or code blocks.\n\n"
+                f"Diff:\n{diff}"
+            )
+            
+            completion = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3,
+                max_tokens=100
+            )
+            return completion.choices[0].message.content.strip()
+    except Exception as e:
+        console.print(f"[bold red]Error generating AI commit: {e}[/bold red]")
+        return None
+
+def startup_animation():
+    with Progress(
+        SpinnerColumn(spinner_name="dots"),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(style="magenta", complete_style="green"),
+        TaskProgressColumn(),
+        console=console,
+        transient=True,
+    ) as progress:
+        task1 = progress.add_task("[cyan]Initializing environment...", total=100)
+        task2 = progress.add_task("[yellow]Loading modules...", total=100)
+        task3 = progress.add_task("[magenta]Checking git status...", total=100)
+        
+        while not progress.finished:
+            progress.update(task1, advance=6)
+            progress.update(task2, advance=3)
+            progress.update(task3, advance=4.5)
+            time.sleep(0.02)
+            
+    panel = Panel.fit(
+        "[bold cyan]W G I T[/bold cyan]\n[italic green]Automatic Git Push CLI[/italic green]",
+        border_style="bold magenta",
+        padding=(1, 5)
+    )
+    console.print(Align.center(panel))
+    console.print()
+
 def main():
     parser = argparse.ArgumentParser(description="WGIT - Automatic Git Push CLI")
     parser.add_argument("--undo", action="store_true", help="Undo the last local commit")
@@ -94,7 +177,7 @@ def main():
         undo_last_commit()
         return
 
-    console.print("[bold cyan]Welcome to WGIT![/bold cyan] :rocket:")
+    startup_animation()
     
     if not os.path.exists(".git"):
         with console.status("[bold yellow]Initializing git repository...[/bold yellow]", spinner="dots"):
@@ -146,14 +229,14 @@ def main():
     add_comment = Confirm.ask("[bold magenta]Do you want to add a git commit comment?[/bold magenta]")
     
     if add_comment:
-        use_conventional = Confirm.ask("[bold magenta]Use Conventional Commits prefix (e.g. feat:, fix: )?[/bold magenta]")
-        if use_conventional:
-            prefix = questionary.select(
-                "Select commit type:",
-                choices=["feat", "fix", "docs", "style", "refactor", "perf", "test", "chore"]
-            ).ask()
-            msg = Prompt.ask("[bold magenta]Enter commit message[/bold magenta]").strip()
-            comment = f"{prefix}: {msg}" if msg else f"{prefix}: update"
+        use_ai = Confirm.ask("[bold magenta]Use Smart AI to generate the commit message?[/bold magenta]")
+        
+        if use_ai:
+            ai_msg = generate_ai_commit()
+            if ai_msg:
+                comment = Prompt.ask("[bold magenta]Edit/Confirm commit message[/bold magenta]", default=ai_msg).strip()
+            else:
+                comment = Prompt.ask("[bold magenta]Enter commit comment manually[/bold magenta]").strip()
         else:
             comment = Prompt.ask("[bold magenta]Enter commit comment[/bold magenta]").strip()
             if not comment:

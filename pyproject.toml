@@ -14,7 +14,8 @@ requires-python = ">=3.7"
 dependencies = [
     "rich",
     "questionary",
-    "requests"
+    "requests",
+    "groq"
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
