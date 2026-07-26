@@ -34,3 +34,13 @@ WAGIT --undo
 ```bash
 WAGIT --help
 ```
+
+**To update your Groq API Key:**
+```bash
+WAGIT --onboard
+```
+
+**To view your commit history:**
+```bash
+WAGIT --history
+```

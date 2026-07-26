@@ -6,6 +6,7 @@ import time
 import argparse
 import requests
 import questionary
+import json
 from rich.console import Console
 from rich.prompt import Prompt, Confirm
 from rich.table import Table
@@ -89,7 +90,7 @@ def show_git_status():
     return files
 
 def get_groq_api_key():
-    config_file = os.path.expanduser("~/.wgit_config")
+    config_file = os.path.expanduser("~/.wagit_config")
     if os.path.exists(config_file):
         with open(config_file, "r") as f:
             for line in f:
@@ -100,7 +101,7 @@ def get_groq_api_key():
     console.print("[italic cyan]You can get a free API key here: https://console.groq.com/keys[/italic cyan]")
     api_key = Prompt.ask("[bold magenta]Enter your Groq API Key (it will be saved securely)[/bold magenta]").strip()
     if api_key:
-        with open(config_file, "a") as f:
+        with open(config_file, "w") as f:
             f.write(f"GROQ_API_KEY={api_key}\n")
         return api_key
     return None
@@ -169,6 +170,65 @@ def startup_animation():
     console.print(Align.center(panel))
     console.print()
 
+def onboard_api():
+    console.print("[bold cyan]--- WAGIT API Onboarding ---[/bold cyan]")
+    console.print("[italic cyan]You can get a free API key here: https://console.groq.com/keys[/italic cyan]")
+    api_key = Prompt.ask("[bold magenta]Enter your new Groq API Key to update your configuration[/bold magenta]").strip()
+    if api_key:
+        config_file = os.path.expanduser("~/.wagit_config")
+        with open(config_file, "w") as f:
+            f.write(f"GROQ_API_KEY={api_key}\n")
+        console.print("[bold green]✔ API Key successfully updated![/bold green]")
+
+def save_history(repo_link, commit_msg):
+    history_file = os.path.expanduser("~/.wagit_history.json")
+    history = []
+    if os.path.exists(history_file):
+        try:
+            with open(history_file, "r") as f:
+                history = json.load(f)
+        except Exception:
+            pass
+            
+    entry = {
+        "timestamp": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        "repo_link": repo_link,
+        "commit_message": commit_msg
+    }
+    history.append(entry)
+    
+    try:
+        with open(history_file, "w") as f:
+            json.dump(history, f, indent=4)
+    except Exception as e:
+        console.print(f"[bold red]Failed to save history: {e}[/bold red]")
+
+def show_history():
+    history_file = os.path.expanduser("~/.wagit_history.json")
+    if not os.path.exists(history_file):
+        console.print("[bold yellow]No commit history found.[/bold yellow]")
+        return
+        
+    try:
+        with open(history_file, "r") as f:
+            history = json.load(f)
+            
+        if not history:
+            console.print("[bold yellow]No commit history found.[/bold yellow]")
+            return
+            
+        table = Table(title="WAGIT Commit History", show_header=True, header_style="bold magenta")
+        table.add_column("Time", style="cyan")
+        table.add_column("Repository", style="green")
+        table.add_column("Commit Message", style="yellow")
+        
+        for entry in reversed(history[-20:]):
+            table.add_row(entry.get("timestamp", ""), entry.get("repo_link", ""), entry.get("commit_message", ""))
+            
+        console.print(table)
+    except Exception as e:
+        console.print(f"[bold red]Failed to read history: {e}[/bold red]")
+
 def main():
     parser = argparse.ArgumentParser(
         description="WAGIT - Automatic Git Push CLI",
@@ -185,13 +245,23 @@ Guides & Usage:
    - Push to GitHub
 
 2. Run `WAGIT --undo` to safely undo your last local commit while keeping your file changes.
+3. Run `WAGIT --onboard` to update your Groq API Key.
+4. Run `WAGIT --history` to view a log of your past commits.
 """
     )
     parser.add_argument("--undo", action="store_true", help="Undo the last local commit")
+    parser.add_argument("--onboard", action="store_true", help="Update your Groq API Key")
+    parser.add_argument("--history", action="store_true", help="View your commit history")
     args = parser.parse_args()
 
     if args.undo:
         undo_last_commit()
+        return
+    if args.onboard:
+        onboard_api()
+        return
+    if args.history:
+        show_history()
         return
 
     startup_animation()
@@ -285,6 +355,7 @@ Guides & Usage:
     with console.status(f"[bold yellow]Pushing to {branch}...[/bold yellow]", spinner="earth"):
         if run_cmd(["git", "push", "-u", "origin", branch]):
             console.print("[bold green]✔ Pushed successfully![/bold green] :tada:")
+            save_history(repo_link, comment)
         else:
             console.print("[bold red]Failed to push. Please check your credentials, permissions, and repository link.[/bold red]")
 
