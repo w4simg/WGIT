@@ -57,11 +57,23 @@ def main():
         subprocess.run(["git", "commit", "-m", comment], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         time.sleep(0.3)
 
-    branch = Prompt.ask("[bold magenta]Branch name[/bold magenta]", default="master").strip()
-    
-    with console.status(f"[bold yellow]Preparing branch '{branch}'...[/bold yellow]", spinner="dots"):
-        subprocess.run(["git", "branch", "-M", branch], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        time.sleep(0.3)
+    # Auto-detect branch
+    current_branch = ""
+    try:
+        # Get current branch
+        result = subprocess.run(["git", "branch", "--show-current"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+        current_branch = result.stdout.strip()
+    except subprocess.CalledProcessError:
+        pass
+
+    if current_branch:
+        branch = current_branch
+        console.print(f"[bold cyan]Current branch '{branch}' detected. Using it automatically.[/bold cyan]")
+    else:
+        branch = Prompt.ask("[bold magenta]Branch name[/bold magenta]", default="master").strip()
+        with console.status(f"[bold yellow]Preparing branch '{branch}'...[/bold yellow]", spinner="dots"):
+            subprocess.run(["git", "branch", "-M", branch], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            time.sleep(0.3)
 
     with console.status(f"[bold yellow]Pushing to {branch}...[/bold yellow]", spinner="earth"):
         if run_cmd(["git", "push", "-u", "origin", branch]):
