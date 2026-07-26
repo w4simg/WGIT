@@ -12,7 +12,9 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.7"
 dependencies = [
-    "rich"
+    "rich",
+    "questionary",
+    "requests"
 ]
 classifiers = [
     "Programming Language :: Python :: 3",

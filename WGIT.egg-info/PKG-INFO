@@ -9,6 +9,8 @@ Classifier: Operating System :: OS Independent
 Requires-Python: >=3.7
 Description-Content-Type: text/markdown
 Requires-Dist: rich
+Requires-Dist: questionary
+Requires-Dist: requests
 
 # WGIT
 
