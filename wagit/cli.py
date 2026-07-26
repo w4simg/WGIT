@@ -97,6 +97,7 @@ def get_groq_api_key():
                     return line.strip().split("=")[1]
     
     console.print("[bold yellow]Groq API Key not found.[/bold yellow]")
+    console.print("[italic cyan]You can get a free API key here: https://console.groq.com/keys[/italic cyan]")
     api_key = Prompt.ask("[bold magenta]Enter your Groq API Key (it will be saved securely)[/bold magenta]").strip()
     if api_key:
         with open(config_file, "a") as f:
