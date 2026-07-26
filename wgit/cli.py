@@ -2,61 +2,72 @@ import os
 import subprocess
 import datetime
 import sys
+import time
+from rich.console import Console
+from rich.prompt import Prompt, Confirm
+
+console = Console()
 
 def run_cmd(cmd):
     try:
         subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         return True
     except subprocess.CalledProcessError as e:
-        print(f"Error executing {' '.join(cmd)}: {e.stderr}", file=sys.stderr)
+        console.print(f"[bold red]Error executing {' '.join(cmd)}:[/bold red] {e.stderr}")
         return False
 
 def main():
+    console.print("[bold cyan]Welcome to WGIT![/bold cyan] :rocket:")
+    
     if not os.path.exists(".git"):
-        print("Initializing git repository...")
-        if not run_cmd(["git", "init"]):
-            return
+        with console.status("[bold yellow]Initializing git repository...[/bold yellow]", spinner="dots"):
+            if not run_cmd(["git", "init"]):
+                return
+            time.sleep(0.5)
+        console.print("[bold green]✔ Git repository initialized.[/bold green]")
 
-    repo_link = input("Enter git repo link: ").strip()
+    repo_link = Prompt.ask("[bold magenta]Enter git repo link[/bold magenta]").strip()
     if repo_link:
-        # Remove existing origin if any, ignore error if it doesn't exist
-        subprocess.run(["git", "remote", "remove", "origin"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        if not run_cmd(["git", "remote", "add", "origin", repo_link]):
-            return
-        print("fetched successfully")
+        with console.status("[bold yellow]Fetching and setting up remote origin...[/bold yellow]", spinner="bouncingBar"):
+            subprocess.run(["git", "remote", "remove", "origin"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if not run_cmd(["git", "remote", "add", "origin", repo_link]):
+                return
+            subprocess.run(["git", "fetch", "origin"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(0.5)
+        console.print("[bold green]✔ Fetched successfully![/bold green]")
     else:
-        print("Repo link cannot be empty.")
+        console.print("[bold red]Repo link cannot be empty.[/bold red]")
         return
 
-    add_comment = input("Do you want to add a git commit comment? (y/n): ").strip().lower()
+    add_comment = Confirm.ask("[bold magenta]Do you want to add a git commit comment?[/bold magenta]")
     
-    if add_comment == 'y':
-        comment = input("Enter commit comment: ").strip()
+    if add_comment:
+        comment = Prompt.ask("[bold magenta]Enter commit comment[/bold magenta]").strip()
         if not comment:
             comment = f"Auto commit: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
     else:
         comment = f"Auto commit: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
 
-    print("Staging files...")
-    if not run_cmd(["git", "add", "."]):
-        return
+    with console.status("[bold yellow]Staging files...[/bold yellow]", spinner="dots2"):
+        if not run_cmd(["git", "add", "."]):
+            return
+        time.sleep(0.3)
         
-    print(f"Committing with message: '{comment}'")
-    # git commit might fail if there's nothing to commit, we ignore the error so push can still run if there are existing commits
-    subprocess.run(["git", "commit", "-m", comment], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    with console.status(f"[bold yellow]Committing with message: '{comment}'...[/bold yellow]", spinner="dots2"):
+        subprocess.run(["git", "commit", "-m", comment], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        time.sleep(0.3)
 
-    branch = input("Branch name (default master): ").strip()
-    if not branch:
-        branch = "master"
+    branch = Prompt.ask("[bold magenta]Branch name[/bold magenta]", default="master").strip()
+    
+    with console.status(f"[bold yellow]Preparing branch '{branch}'...[/bold yellow]", spinner="dots"):
+        subprocess.run(["git", "branch", "-M", branch], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        time.sleep(0.3)
 
-    # Make sure we are on the correct branch and it's created/renamed
-    subprocess.run(["git", "branch", "-M", branch], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    print(f"Pushing to {branch}...")
-    if run_cmd(["git", "push", "-u", "origin", branch]):
-        print("Pushed successfully!")
-    else:
-        print("Failed to push. Please check your credentials, permissions, and repository link.")
+    with console.status(f"[bold yellow]Pushing to {branch}...[/bold yellow]", spinner="earth"):
+        if run_cmd(["git", "push", "-u", "origin", branch]):
+            console.print("[bold green]✔ Pushed successfully![/bold green] :tada:")
+        else:
+            console.print("[bold red]Failed to push. Please check your credentials, permissions, and repository link.[/bold red]")
 
 if __name__ == "__main__":
     main()

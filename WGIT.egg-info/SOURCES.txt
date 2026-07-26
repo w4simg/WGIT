@@ -4,6 +4,7 @@ WGIT.egg-info/PKG-INFO
 WGIT.egg-info/SOURCES.txt
 WGIT.egg-info/dependency_links.txt
 WGIT.egg-info/entry_points.txt
+WGIT.egg-info/requires.txt
 WGIT.egg-info/top_level.txt
 wgit/__init__.py
 wgit/cli.py

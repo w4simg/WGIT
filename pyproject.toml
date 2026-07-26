@@ -7,10 +7,13 @@ name = "WGIT"
 version = "0.1.0"
 description = "Automatic Git Push CLI"
 authors = [
-    { name="WGIT Author", email="author@example.com" },
+    { name="w4simg", email="w4simz@outlook.com" },
 ]
 readme = "README.md"
 requires-python = ">=3.7"
+dependencies = [
+    "rich"
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
