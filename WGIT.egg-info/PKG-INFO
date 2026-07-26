@@ -1,0 +1,28 @@
+Metadata-Version: 2.4
+Name: WGIT
+Version: 0.1.0
+Summary: Automatic Git Push CLI
+Author-email: WGIT Author <author@example.com>
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+
+# WGIT
+
+An automatic tool to push your code to GitHub without typing too many commands.
+
+## Installation
+
+```bash
+pip install WGIT
+```
+
+## Usage
+
+Run the `WGIT` command inside any directory you want to push to GitHub.
+
+```bash
+WGIT
+```
