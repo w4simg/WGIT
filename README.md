@@ -13,7 +13,7 @@ pip install WAGIT
 - **Automated Workflow**: Automatically initializes a git repository, detects current branches, and pushes your code.
 - **Interactive File Staging**: Choose whether to stage all files or selectively pick which files you want to commit using a beautiful checkbox menu.
 - **Changed Files Summary**: View a color-coded table of all Modified, Added, and Deleted files before you commit.
-- **Smart Commit Messages with AI**: Powered by Groq AI! Select "Generate with AI" to have a fast LLM read your staged changes and write a clean, professional commit message for you automatically.
+- **Smart Commit Messages with AI**:Select "Generate with AI" to have a fast LLM read your staged changes and write a clean, professional commit message for you automatically.
 - **Automatic `.gitignore`**: If your project is missing one, `WAGIT` can instantly generate a `.gitignore` file for your specific programming language by fetching the official template from GitHub.
 - **Undo Mistakes**: Safely revert your last local commit while preserving all your file changes with a single flag.
 
