@@ -113,7 +113,15 @@ def generate_ai_commit():
         return None
         
     try:
-        diff_result = subprocess.run(["git", "diff", "--staged"], stdout=subprocess.PIPE, text=True, check=True)
+        diff_result = subprocess.run(
+            ["git", "diff", "--staged"], 
+            stdout=subprocess.PIPE, 
+            stderr=subprocess.PIPE, 
+            text=True, 
+            encoding="utf-8", 
+            errors="replace", 
+            check=True
+        )
         diff = diff_result.stdout.strip()
         if not diff:
             console.print("[bold red]No staged changes found to generate a commit message.[/bold red]")
@@ -140,7 +148,7 @@ def generate_ai_commit():
             )
             return completion.choices[0].message.content.strip()
     except Exception as e:
-        console.print(f"[bold red]Error generating AI commit: {e}[/bold red]")
+        console.print(f"[bold red]Error generating AI commit:[/bold red] {str(e)}")
         return None
 
 def startup_animation():
@@ -229,6 +237,116 @@ def show_history():
     except Exception as e:
         console.print(f"[bold red]Failed to read history: {e}[/bold red]")
 
+def generate_readme():
+    api_key = get_groq_api_key()
+    if not api_key:
+        console.print("[bold red]API Key is required to generate README.[/bold red]")
+        return False
+        
+    if os.path.exists("README.md"):
+        overwrite = Confirm.ask("[bold yellow]README.md already exists. Do you want to overwrite it?[/bold yellow]", default=False)
+        if not overwrite:
+            console.print("[bold cyan]Skipping README generation.[/bold cyan]")
+            return False
+
+    with console.status("[bold yellow]Analyzing project and generating README.md with AI...[/bold yellow]", spinner="dots"):
+        try:
+            from groq import Groq
+            client = Groq(api_key=api_key)
+            
+            # Basic tree structure
+            tree_output = []
+            for root, dirs, files in os.walk("."):
+                dirs[:] = [d for d in dirs if d not in [".git", "__pycache__", "node_modules", "venv", ".venv"]]
+                level = root.replace(".", "").count(os.sep)
+                indent = " " * 4 * (level)
+                tree_output.append(f"{indent}{os.path.basename(root)}/")
+                subindent = " " * 4 * (level + 1)
+                for f in files:
+                    if not f.endswith(".pyc"):
+                        tree_output.append(f"{subindent}{f}")
+            
+            tree_str = "\n".join(tree_output[:200]) # limit size
+            
+            prompt = (
+                "You are an expert developer. Generate a professional and comprehensive README.md "
+                "for this project based on the following directory structure. Include sections like "
+                "Project Overview, Features, Installation, and Usage. Only output valid Markdown.\n\n"
+                f"Directory Structure:\n{tree_str}"
+            )
+            
+            completion = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.4,
+                max_tokens=1500
+            )
+            
+            readme_content = completion.choices[0].message.content.strip()
+            if readme_content.startswith("```markdown"):
+                readme_content = readme_content[11:]
+            if readme_content.startswith("```"):
+                readme_content = readme_content[3:]
+            if readme_content.endswith("```"):
+                readme_content = readme_content[:-3]
+                
+            with open("README.md", "w", encoding="utf-8") as f:
+                f.write(readme_content.strip() + "\n")
+                
+            console.print("[bold green]✔ README.md generated successfully![/bold green]")
+            return True
+            
+        except Exception as e:
+            console.print(f"[bold red]Error generating README: {e}[/bold red]")
+            return False
+
+def manage_branches():
+    while True:
+        try:
+            result = subprocess.run(["git", "branch"], stdout=subprocess.PIPE, text=True, check=True)
+            branches = [b[2:].strip() for b in result.stdout.splitlines() if b]
+            current_branch = ""
+            for b in result.stdout.splitlines():
+                if b.startswith("* "):
+                    current_branch = b[2:].strip()
+        except subprocess.CalledProcessError:
+            console.print("[bold red]Not a git repository or no branches found.[/bold red]")
+            return
+
+        choices = [
+            questionary.Choice("Switch Branch", value="switch"),
+            questionary.Choice("Create New Branch", value="create"),
+            questionary.Choice("Delete Branch", value="delete"),
+            questionary.Choice("Exit Branch Manager", value="exit")
+        ]
+
+        console.print(f"\n[bold cyan]Current Branch: {current_branch}[/bold cyan]")
+        action = questionary.select("Choose an action:", choices=choices).ask()
+        
+        if action == "exit" or not action:
+            break
+            
+        if action == "switch":
+            branch_to_switch = questionary.select("Select branch to switch to:", choices=branches).ask()
+            if branch_to_switch:
+                run_cmd(["git", "checkout", branch_to_switch])
+                
+        elif action == "create":
+            new_branch = Prompt.ask("[bold magenta]Enter new branch name[/bold magenta]").strip()
+            if new_branch:
+                run_cmd(["git", "checkout", "-b", new_branch])
+                
+        elif action == "delete":
+            branches_to_delete = [b for b in branches if b != current_branch]
+            if not branches_to_delete:
+                console.print("[bold yellow]No other branches to delete.[/bold yellow]")
+                continue
+            branch_to_delete = questionary.select("Select branch to delete:", choices=branches_to_delete).ask()
+            if branch_to_delete:
+                confirm = Confirm.ask(f"[bold red]Are you sure you want to delete branch '{branch_to_delete}'?[/bold red]")
+                if confirm:
+                    run_cmd(["git", "branch", "-D", branch_to_delete])
+
 def main():
     parser = argparse.ArgumentParser(
         description="WAGIT - Automatic Git Push CLI",
@@ -252,6 +370,8 @@ Guides & Usage:
     parser.add_argument("--undo", action="store_true", help="Undo the last local commit")
     parser.add_argument("--onboard", action="store_true", help="Update your Groq API Key")
     parser.add_argument("--history", action="store_true", help="View your commit history")
+    parser.add_argument("--readme", action="store_true", help="Generate an AI README.md")
+    parser.add_argument("--branch", action="store_true", help="Interactive branch manager")
     args = parser.parse_args()
 
     if args.undo:
@@ -262,6 +382,12 @@ Guides & Usage:
         return
     if args.history:
         show_history()
+        return
+    if args.readme:
+        generate_readme()
+        return
+    if args.branch:
+        manage_branches()
         return
 
     startup_animation()
@@ -287,6 +413,10 @@ Guides & Usage:
     else:
         console.print("[bold red]Repo link cannot be empty.[/bold red]")
         return
+
+    generate = Confirm.ask("[bold magenta]Do you want to generate an AI README.md for this project?[/bold magenta]", default=False)
+    if generate:
+        generate_readme()
 
     changed_files = show_git_status()
     if not changed_files:

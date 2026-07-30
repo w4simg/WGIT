@@ -14,6 +14,8 @@ pip install WAGIT
 - **Interactive File Staging**: Choose whether to stage all files or selectively pick which files you want to commit using a beautiful checkbox menu.
 - **Changed Files Summary**: View a color-coded table of all Modified, Added, and Deleted files before you commit.
 - **Smart Commit Messages with AI**:Select "Generate with AI" to have a fast LLM read your staged changes and write a clean, professional commit message for you automatically.
+- **AI README Generation**: Generate a professional, contextual README.md for your project instantly using AI. Integrated directly into the push flow or accessible on demand.
+- **Interactive Branch Management**: A visual interface to effortlessly switch, create, or delete branches without typing out commands.
 - **Automatic `.gitignore`**: If your project is missing one, `WAGIT` can instantly generate a `.gitignore` file for your specific programming language by fetching the official template from GitHub.
 - **Undo Mistakes**: Safely revert your last local commit while preserving all your file changes with a single flag.
 
@@ -44,3 +46,19 @@ WAGIT --onboard
 ```bash
 WAGIT --history
 ```
+
+**To generate a README.md for your project:**
+```bash
+WAGIT --readme
+```
+
+**To manage your branches interactively:**
+```bash
+WAGIT --branch
+```
+
+## Version
+**Current Version:** 0.2.2
+
+## Author
+**w4simg** - [w4simz@outlook.com](mailto:w4simz@outlook.com)

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "WAGIT"
-version = "0.1.1"
+version = "0.2.2"
 description = "Automatic Git Push CLI"
 authors = [
     { name="w4simg", email="w4simz@outlook.com" },
