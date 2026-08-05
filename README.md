@@ -12,7 +12,6 @@ pip install WAGIT
 
 - **Automated Workflow**: Automatically initializes a git repository, detects current branches, and pushes your code.
 - **Interactive File Staging**: Choose whether to stage all files or selectively pick which files you want to commit using a beautiful checkbox menu.
-- **Changed Files Summary**: View a color-coded table of all Modified, Added, and Deleted files before you commit.
 - **Smart Commit Messages with AI**:Select "Generate with AI" to have a fast LLM read your staged changes and write a clean, professional commit message for you automatically.
 - **AI README Generation**: Generate a professional, contextual README.md for your project instantly using AI. Integrated directly into the push flow or accessible on demand.
 - **Interactive Branch Management**: A visual interface to effortlessly switch, create, or delete branches without typing out commands.
